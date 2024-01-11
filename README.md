@@ -46,7 +46,7 @@ You can refine the search for only urls with 200 response codes, or any response
 
 ```select url from links where status_code = '200';```
 
-Or just display links where <form> tags were found on the page like this:
+Or just display links where form tags were found on the page like this:
 
 ```select url from links where has_form = 'y';```
 
