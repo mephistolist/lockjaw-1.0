@@ -62,9 +62,7 @@ async fn main() {
 }
 
 async fn run_spider(start_url: &str, db_file: &str, spoof_ip: &str, user_agent: &str) -> Result<(), Box<dyn Error>> {
-    let conn = Arc::new(Mutex::new(Connection::open(db_file)?)); /*
-async fn run_spider(start_url: &str, db_file: &str, spoof_ip: &str, user_agent: &str) -> Result<(), Box<dyn Error>> {
-    let conn = Connection::open(db_file)?;*/
+    let conn = Arc::new(Mutex::new(Connection::open(db_file)?)); 
 
     // Create a reqwest Client with a custom user-agent
     let client = reqwest::blocking::Client::builder()
