@@ -97,7 +97,6 @@ fn create_tables(conn: &Arc<Mutex<Connection>>) -> Result<(), rusqlite::Error> {
     Ok(())
 }
 
-//fn spider(url: &str, mut visited: Vec<String>, client: &reqwest::blocking::Client, conn: &Arc<Mutex<Connection>>) -> Result<(), Box<dyn Error>> {
 fn spider(url: &str, visited: Arc<Mutex<Vec<String>>>, client: &reqwest::blocking::Client, conn: &Arc<Mutex<Connection>>) -> Result<(), Box<dyn Error>> {
     if visited.lock().unwrap().contains(&url.to_string()) {
         return Ok(());
