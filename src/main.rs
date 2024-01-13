@@ -80,7 +80,6 @@ async fn run_spider(start_url: &str, db_file: &str, spoof_ip: &str, user_agent: 
     create_tables(&conn)?;
 
     spider(start_url, Arc::new(Mutex::new(Vec::new())), &client, &conn)?;
-    //spider(start_url, Vec::new(), &client, &conn)?;
     Ok(())
 }
 
@@ -104,10 +103,6 @@ fn spider(url: &str, visited: Arc<Mutex<Vec<String>>>, client: &reqwest::blockin
         return Ok(());
     }
 
-    /*if visited.contains(&url.to_string()) {
-        return Ok(());
-    }*/
-
     let response = client.get(url).send()?;
 
     // Print the URL and status code
@@ -127,16 +122,11 @@ fn spider(url: &str, visited: Arc<Mutex<Vec<String>>>, client: &reqwest::blockin
     let has_form_str = if has_form { "y" } else { "n" };
 
     // Insert into the database with information about the <form> tag
-    /*conn.lock().unwrap().execute(
-        "INSERT INTO links (url, status_code, has_form) VALUES (?1, ?2, ?3)",
-        params![url, status_code, has_form_str],
-    )?;*/
     conn.lock().unwrap().execute(
         "INSERT INTO links (url, status_code, has_form) VALUES (?1, ?2, ?3)",
         params![url, status_code, has_form_str],
     )?;
 
-    //visited.push(url.to_string());
     visited.lock().unwrap().push(url.to_string());
 
     for node in document.find(Name("a")) {
