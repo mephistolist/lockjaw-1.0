@@ -78,8 +78,7 @@ async fn run_spider(start_url: &str, db_file: &str, spoof_ip: &str, user_agent: 
         .build()?;
 
     create_tables(&conn)?;
-
-    spider(start_url, Arc::new(Mutex::new(Vec::new())), &client, &conn)?;
+    spider(start_url, Arc::new(Mutex::new(Vec::new())), &client, &conn).await?;
     Ok(())
 }
 
@@ -97,21 +96,36 @@ fn create_tables(conn: &Arc<Mutex<Connection>>) -> Result<(), rusqlite::Error> {
     Ok(())
 }
 
-fn spider(url: &str, visited: Arc<Mutex<Vec<String>>>, client: &reqwest::blocking::Client, conn: &Arc<Mutex<Connection>>) -> Result<(), Box<dyn Error>> {
+async fn spider(url: &str, visited: Arc<Mutex<Vec<String>>>, client: &reqwest::blocking::Client, conn: &Arc<Mutex<Connection>>) -> Result<(), Box<dyn Error>> {
     if visited.lock().unwrap().contains(&url.to_string()) {
         return Ok(());
     }
 
-    let response = client.get(url).send()?;
+    let response = match client.get(url).send() {
+        Ok(response) => response,
+        Err(err) => {
+            // Handle DNS resolution error
+            if err.to_string().contains("dns error") {
+                // Log the error and proceed with the next URL
+                println!("Error: DNS resolution failed for {}", url);
+                return Ok(());
+            }
+            // Handle SSL certificate validation error
+            if err.to_string().contains("certificate verify failed") {
+                // Log the error and proceed with the next URL
+                println!("Error: SSL certificate validation failed for {}", url);
+                return Ok(());
+            }
+            // For other errors, propagate the error
+            return Err(Box::new(err));
+        }
+    };
 
-    // Print the URL and status code
     let status_code = response.status().as_u16() as i64;
     println!("{} - Status: {}", url, status_code);
 
-    // Check for the existence of a <form> tag
     let body = response.text()?;
     let document = Document::from(body.as_str());
-
     let mut has_form = false;
     for _node in document.find(Name("form")) {
         has_form = true;
@@ -120,28 +134,24 @@ fn spider(url: &str, visited: Arc<Mutex<Vec<String>>>, client: &reqwest::blockin
 
     let has_form_str = if has_form { "y" } else { "n" };
 
-    // Insert into the database with information about the <form> tag
     conn.lock().unwrap().execute(
         "INSERT INTO links (url, status_code, has_form) VALUES (?1, ?2, ?3)",
         params![url, status_code, has_form_str],
     )?;
-
     visited.lock().unwrap().push(url.to_string());
 
+    // Process other links
     for node in document.find(Name("a")) {
         if let Some(link) = node.attr("href") {
-            // Check if the link is an absolute URL or a relative path
             let absolute_url = if link.starts_with("http://") || link.starts_with("https://") {
                 link.to_string()
             } else if link.starts_with('/') {
                 let base_url = Url::parse(url)?;
                 base_url.join(link)?.to_string()
             } else {
-                // Skip relative URLs without a base
                 continue;
             };
-
-            spider(&absolute_url, visited.clone(), client, conn)?;
+            Box::pin(spider(&absolute_url, visited.clone(), client, conn)).await?;
         }
     }
 
