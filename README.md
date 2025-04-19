@@ -1,4 +1,9 @@
 # lockjaw
+
+This version has now been deprecated in favor of this newer version. Please us it instead:
+
+https://github.com/mephistolist/lockjaw/tree/main
+
 A web spider in Rust that helps to hide tracks. Its easy for most people to use a VPN or tor and hide their ip address. This code does not do that, but focues on spoofing the X-Forwarded-For, X-Originating-IP, X-Remote-IP and X-Remote-Addr headers instead. Even if an ip is spoofed, these headers can give away the user's true ip address. Most tor nodes and some VPNs will claim to strip out these headers, but if you aren't there, you don't know. The option to set a user-agent is also given to appear as a normal web browser or whatever string you wish to send to the host.
 
 You can build this with:
