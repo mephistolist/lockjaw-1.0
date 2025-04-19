@@ -1,6 +1,6 @@
 # lockjaw
 
-This version has now been deprecated in favor of this newer version. Please us it instead:
+This version has now been deprecated in favor of a newer version. Please use it instead:
 
 https://github.com/mephistolist/lockjaw/tree/main
 
